@@ -1,127 +1,71 @@
+;;; routeros-mode.el --- Major mode for editing RouterOS configuration files
+;;
+;; Author: Your Name <you@example.com>
+;; Version: 1.0
+;; Keywords: router, configuration
+;; License: GPL-3.0-or-later
 
+(defvar routeros-mode-hook nil
+  "Hook called by `routeros-mode'.")
 
-;;########################################################################
-;;** which-key
-;;作用: Emacs中的快捷键导师，按下某些键，则显示所有相关的快捷键
-;;########################################################################
-;;https://github.com/justbur/emacs-which-key.git
-;;(add-to-list 'load-path "~/.emacs.d/apps/emacs-which-key")
-(require 'which-key)
-(which-key-mode)
+(defvar routeros-mode-map
+  (let ((map (make-keymap)))
+    (define-key map "\C-j" 'newline-and-indent)
+    map)
+  "Keymap for RouterOS configuration major mode.")
 
-;; (setq which-key-idle-delay 0.5)
+;; Font locking definitions
+(defvar routeros-command-face 'routeros-command-face "Face for RouterOS commands")
+(defvar routeros-ipaddr-face 'routeros-ipaddr-face "Face for IP addresses")
 
-;; 显示方式
-(which-key-setup-side-window-bottom)    ; 默认显示在底部
- ;; (which-key-setup-side-window-right)     ; 显示在右边
+(defface routeros-ipaddr-face
+  '((t (:foreground "lightblue")))
+  "Face for IP addresses.")
 
-(which-key-setup-minibuffer)
+(defface routeros-command-face
+  '((t (:foreground "cyan")))
+  "Face for RouterOS commands.")
 
-;; (which-key-setup-side-window-right-bottom) ; 动态使用底部 或 右侧
+(defconst routeros-font-lock-keywords
+  (list
+   '("\\<\\(interface\\|ip\\|route\\|add\\|set\\|remove\\|comment\\)\\>" . routeros-command-face)
+   '("\\<\\([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+\\)\\>" . routeros-ipaddr-face))
+  "Font locking definitions for RouterOS mode.")
 
-(setq which-key-popup-type 'side-window)
+;; Indentation definitions
+(defun routeros-indent-line ()
+  "Indent current line as RouterOS configuration line."
+  (let ((indent-level 0))
+    (beginning-of-line)
+    (when (looking-at "^\\s-*\\(\\(interface\\|ip\\|route\\|add\\|set\\|remove\\)\\)\\s-*")
+      (setq indent-level 2))
+    (indent-line-to indent-level)))
 
-(setq which-key-compute-remaps t) ;Show correct descriptions for remapped keys
+;; Custom syntax table
+(defvar routeros-mode-syntax-table (make-syntax-table)
+  "Syntax table for RouterOS mode.")
 
-(setq which-key-allow-multiple-replacements t) ;Default = nil
+(modify-syntax-entry ?_ "w" routeros-mode-syntax-table)
+(modify-syntax-entry ?- "w" routeros-mode-syntax-table)
+(modify-syntax-entry ?! "<" routeros-mode-syntax-table)
+(modify-syntax-entry ?\n ">" routeros-mode-syntax-table)
 
-;; 默认配置
-(setq which-key-sort-order 'which-key-key-order)
-;; 和默认一样，但单个字符按字母顺序排序
-;; (setq which-key-sort-order 'which-key-key-order-alpha)
-;; 和默认一样，但所有前缀键会被分组放在最后
-;; (setq which-key-sort-order 'which-key-prefix-then-key-order)
-;; 和默认一样，但首先显示所有来自本地映射的键
-;; (setq which-key-sort-order 'which-key-local-then-key-order)
-;; 根据键的描述（忽略大小写）进行排序
-;; (setq which-key-sort-order 'which-key-description-order)
+;; Entry point
+(defun routeros-mode ()
+  "Major mode for editing RouterOS configuration files."
+  (interactive)
+  (kill-all-local-variables)
+  (set-syntax-table routeros-mode-syntax-table)
+  (use-local-map routeros-mode-map)
+  (set (make-local-variable 'font-lock-defaults) '(routeros-font-lock-keywords))
+  (set (make-local-variable 'indent-line-function) 'routeros-indent-line)
+  (set (make-local-variable 'comment-start) "#")
+  (setq major-mode 'routeros-mode
+        mode-name "RouterOS Config")
+  (run-hooks routeros-mode-hook))
 
+(add-to-list 'auto-mode-alist '("\\.rsc\\'" . routeros-mode))
 
-;; (setq which-key-popup-type 'frame)
+(provide 'routeros-mode)
 
-;; 为快捷键添加注释或替换原来的函数名
-
-
-;; (which-key-add-key-based-replacements
-;;   "C-x 8"   "unicode"
-;;   "C-x a"   "abbrev/expand"
-;;   "C-x r"   "rectangle/register/bookmark"
-;;   "C-x v"   "version control"
-;;   "C-c /"   "engine-mode-map"
-;;   "C-c C-v" "org-babel"
-;;   "C-x 8 0" "ZWS")
-
-
-;; default
-(setq which-key-sort-order 'which-key-key-order)
-
-
-
-
-;;...........................................................
-;;***
-;;...........................................................
-;; Highlight certain commands
-(defface modi/which-key-highlight-2-face
-  '((t . (:inherit which-key-command-description-face :foreground "indian red")))
-  "Another face for highlighting commands in `which-key'.")
-
-(defface modi/which-key-highlight-3-face
-  '((t . (:inherit which-key-command-description-face :foreground "DarkOrange3")))
-  "Another face for highlighting commands in `which-key'.")
-
-(setq which-key-highlighted-command-list
-      '(("\\`hydra-" . which-key-group-description-face)
-        ;; Highlight using the `modi/which-key-highlight-2-face'
-        ("\\`modi/" . modi/which-key-highlight-2-face)
-        ;; Highlight using the `modi/which-key-highlight-3-face'
-        
-        ("\\`my-" . modi/which-key-highlight-3-face)
-        
-        ("\\`counsel-" . modi/which-key-highlight-3-face)
-        ;; Highlight using the default `which-key-highlighted-command-face'
-        "\\`describe-"
-        "\\(rectangle-\\)\\|\\(-rectangle\\)"
-        "\\`org-"))
-
-;;########################################################################
-;;** general
-;;作用: Emacs中的快捷键导师，按下某些键，则显示所有相关的快捷键
-;;########################################################################
-(require 'general)
-;; (general-override-mode 1)
-;; (general-create-definer tyrant-def-1
-;;   :states '(normal visual insert motion emacs)
-;;   :prefix "SPC"
-;;   :non-normal-prefix "C-SPC")
-
-;; (tyrant-def-1
-;;  ""     nil
-;;  "c"   (general-simulate-key "C-c")
-;;  "h"   (general-simulate-key "C-h")
-;;  "u"   (general-simulate-key "C-u")
-;;  "x"   (general-simulate-key "C-x")
-
-;;  ;; Package manager
-;;  "lp"  'list-packages
-
-;;  ;; Quit operations
-;;  "q"	'(:ignore t :which-key "quit emacs")   
-;;  "qq"  'kill-emacs
-;;  "qz"  'delete-frame
-
-;;  ;; Buffer operations
-;;  "b"   '(:ignore t :which-key "buffer")  
-;;  "bb"  'mode-line-other-buffer
-;;  "bd"  'kill-this-buffer 
-;;  "bD"  'vb/close-all-buffers
-;;  "b]"  'next-buffer
-;;  "b["  'previous-buffer 
-;;  "bq"  'kill-buffer-and-window
-;;  "bR"  'rename-filand-buffer
-;;  "br"  'revert-buffer 
-;;  )     
-
-(provide 'init-which-key) 
-;;;;; my-test.el ends here
-           
+;;; routeros-mode.el ends here
