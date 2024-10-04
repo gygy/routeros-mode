@@ -64,8 +64,11 @@
         mode-name "RouterOS Config")
   (run-hooks routeros-mode-hook))
 
+;; Ensure .rsc files use routeros-mode
 (add-to-list 'auto-mode-alist '("\\.rsc\\'" . routeros-mode))
 
-(provide 'routeros-mode)
+;; Load the mode if it's not already loaded
+(unless (featurep 'routeros-mode)
+  (provide 'routeros-mode))
 
 ;;; routeros-mode.el ends here
